@@ -1,0 +1,37 @@
+name: Contributions
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, 01:17 in Panamá
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/scripts/contributions.py
+      - .github/workflows/contributions.yml
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Render SVGs
+        run: python .github/scripts/contributions.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_USER: ${{ github.repository_owner }}
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/contributions-*.svg
+          git diff --staged --quiet || (git commit -m "Update contribution graph" && git push)
